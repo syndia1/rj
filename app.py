@@ -1,187 +1,248 @@
 from flask import Flask, render_template_string
-import random
 
 app = Flask(__name__)
 
-flowers = ["🌸","🌹","🌼","🌻","🌷","💐","🌺","🪻"]
-
-html_template = """
+html = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>For Ranjitha 💜</title>
+<title>For Ranjitha 💜</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            background: linear-gradient(135deg, #1f0036, #5f0a87);
-            overflow: hidden;
-            color: white;
-        }
+<style>
+body {
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    font-family: Arial;
+    overflow: hidden;
+}
 
-        .loader {
-            position: absolute;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: black;
-            z-index: 10;
-        }
+/* 💜 glowing aesthetic background */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #5f0a87aa, black 70%);
+    z-index: 0;
+}
 
-        .card {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255,255,255,0.1);
-            padding: 25px;
-            border-radius: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            width: 380px;
-            display: none;
-        }
+/* container */
+.container {
+    text-align: center;
+    z-index: 2;
+}
 
-        .flowers { font-size: 36px; margin: 15px 0; }
-        .typewriter { font-size: 16px; min-height: 40px; }
+/* image animation */
+.img {
+    width: 260px;
+    border-radius: 15px;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.8s ease;
+}
 
-        button {
-            margin-top: 10px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 10px;
-            background: #b026ff;
-            color: white;
-            cursor: pointer;
-        }
+.show {
+    opacity: 1;
+    transform: scale(1);
+}
 
-        .hidden { display: none; margin-top: 10px; }
+/* 🎶 glowing text */
+.text {
+    margin-top: 15px;
+    font-size: 18px;
+    text-shadow: 0 0 10px #b026ff, 0 0 20px #b026ff;
+}
 
-        .hearts span {
-            position: absolute;
-            color: pink;
-            animation: float 6s linear infinite;
-        }
+/* button */
+button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #b026ff;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+}
 
-        @keyframes float {
-            from { transform: translateY(100vh); }
-            to { transform: translateY(-10vh); }
-        }
+/* 💜 floating hearts */
+.hearts {
+    pointer-events: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
 
-        .bouquet-builder {
-            margin-top: 15px;
-        }
+.hearts span {
+    position: absolute;
+    animation: floatUp linear infinite;
+}
 
-        .flower-btn {
-            font-size: 20px;
-            margin: 3px;
-            cursor: pointer;
-        }
+@keyframes floatUp {
+    from {
+        transform: translateY(100vh);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-10vh);
+        opacity: 0;
+    }
+}
 
-        .bouquet {
-            margin-top: 10px;
-            font-size: 28px;
-        }
-    </style>
+/* ✨ sparkle */
+.sparkle {
+    position: absolute;
+    font-size: 20px;
+    animation: sparkle 1s ease forwards;
+}
+
+@keyframes sparkle {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+/* 🎬 fade out */
+.fade-out {
+    animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+    }
+}
+</style>
 </head>
+
 <body>
-
-<div class="loader" id="loader">Loading your flowers... 💐</div>
-
-<div class="card" id="card">
-    <h2>For Ranjitha 💜</h2>
-
-    <div class="flowers">{{ flower_string }}</div>
-
-    <div class="typewriter" id="type"></div>
-
-    <button onclick="reveal()">Click for surprise ✨</button>
-
-    <div class="hidden" id="secret">
-        Sending you flowers because you deserve it 💐<br>
-        Did you eat the speaker that day? 💀<br>
-        Borahae 💜<br><br>
-        <b>From: your chaotic bestie</b>
-    </div>
-
-    <div class="bouquet-builder">
-        <p>Make your own bouquet 🌷</p>
-        <div>
-            <span class="flower-btn" onclick="addFlower('🌸')">🌸</span>
-            <span class="flower-btn" onclick="addFlower('🌹')">🌹</span>
-            <span class="flower-btn" onclick="addFlower('🌼')">🌼</span>
-            <span class="flower-btn" onclick="addFlower('🌻')">🌻</span>
-            <span class="flower-btn" onclick="addFlower('🌷')">🌷</span>
-        </div>
-        <div class="bouquet" id="bouquet"></div>
-    </div>
-</div>
 
 <div class="hearts" id="hearts"></div>
 
-<audio id="bgMusic" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=romantic-background-112191.mp3" type="audio/mpeg">
+<!-- MUSIC -->
+<audio id="bgMusic" preload="auto">
+  <source src="/static/bts.mp3" type="audio/mpeg">
 </audio>
 
+<div class="container">
+
+    <img id="slide" class="img" src="">
+
+    <div id="text" class="text"></div>
+
+    <button onclick="start()">Click here💜</button>
+
+</div>
+
 <script>
-    const text = "Happy Flowers Day Ranjitha 🌸 You deserve chaos, soft things, and BTS-level love 💜";
+
+/* images */
+const images = [
+    "/static/bts1.jpg",
+    "/static/bts2.jpg",
+    "/static/bts3.jpg",
+    "/static/bts4.jpg",
+    "/static/bts6.jpg",
+    "/static/bts11.jpg",
+    "/static/bts12.jpg",
+    "/static/bts13.jpg",
+    "/static/bts14.jpg",
+    "/static/bts15.jpg",
+    "/static/bts16.jpg",
+    "/static/bts17.jpg",
+    "/static/bts18.jpg",
+    "/static/bts19.jpg",
+    "/static/bts20.jpg",
+    
+];
+
+/* captions */
+const captions = [
+    "Happy Flowers Day Ranjitha 💜",
+    "You deserve all the flowers 🌸",    
+];
+
+/* 💜 hearts */
+function createHearts() {
+    const container = document.getElementById("hearts");
+
+    for (let i = 0; i < 25; i++) {
+        const span = document.createElement("span");
+        span.innerHTML = "💜";
+
+        span.style.left = Math.random() * 100 + "vw";
+        span.style.animationDuration = (3 + Math.random() * 5) + "s";
+        span.style.fontSize = (14 + Math.random() * 10) + "px";
+
+        container.appendChild(span);
+    }
+}
+
+/* ✨ sparkle */
+
+
+/* slideshow + music */
+function start() {
+    const music = document.getElementById("bgMusic");
+
+    music.pause();
+    music.currentTime = 0;
+    music.muted = false;
+    music.play().catch(()=>{});
+
+    document.querySelector("button").style.display = "none";
+
     let i = 0;
+    const img = document.getElementById("slide");
+    const text = document.getElementById("text");
 
-    function typeWriter() {
-        if (i < text.length) {
-            document.getElementById("type").innerHTML += text.charAt(i);
-            i++;
-            setTimeout(typeWriter, 40);
+    function showNext() {
+        if (i >= images.length) {
+            setTimeout(() => {
+                document.body.classList.add("fade-out");
+            }, 2000);
+            return;
         }
-    }
 
-    function reveal() {
-        document.getElementById("secret").style.display = "block";
-        document.getElementById("bgMusic").play().catch(() => {});
-    }
+        img.classList.remove("show");
 
-    function loadScreen() {
         setTimeout(() => {
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("card").style.display = "block";
-            typeWriter();
-        }, 2000);
+            img.src = images[i];
+            text.innerHTML = captions[i] || "";
+            img.classList.add("show");
+
+            
+
+            i++;
+            setTimeout(showNext, 2500);
+        }, 300);
     }
 
-    function createHearts() {
-        const hearts = document.getElementById("hearts");
-        for (let i = 0; i < 20; i++) {
-            let span = document.createElement("span");
-            span.innerHTML = "💜";
-            span.style.left = Math.random() * 100 + "vw";
-            span.style.animationDuration = (3 + Math.random() * 5) + "s";
-            hearts.appendChild(span);
-        }
-    }
+    showNext();
+}
 
-    function addFlower(flower) {
-        document.getElementById("bouquet").innerHTML += flower;
-    }
+/* run hearts */
+window.onload = createHearts;
 
-    window.onload = () => {
-        loadScreen();
-        createHearts();
-    };
 </script>
 
 </body>
 </html>
 """
 
-def generate_flowers():
-    return "".join(random.choice(flowers) for _ in range(10))
-
 @app.route("/for-ranjitha")
-def ranjitha():
-    return render_template_string(html_template, flower_string=generate_flowers())
+def home():
+    return render_template_string(html)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
